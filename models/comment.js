@@ -5,7 +5,7 @@ const commentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
   },
-  message: { type: String, require: [true, "Message field is reuired"] },
+  message: { type: String, required: [true, "Message field is reuired"] },
   date: { type: Date, default: Date.now }
 });
 
