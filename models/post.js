@@ -9,11 +9,12 @@ mongoose.connect("mongodb://localhost/post", {
 const postSchema = new mongoose.Schema({
   author: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
+    required: true
   },
   message: { type: String, required: [true, "Message field is reuired"] },
   date: { type: Date, default: Date.now },
-  likes: Number,
+  likes: { type: Number, default: 0 },
   comments: [commentSchema]
 });
 
