@@ -8,7 +8,7 @@ router.get("/", (req, res) => {
     .sort({ name: 1 })
     .select("-password -__v")
     .then(result => res.send(result))
-    .catch(err => console.log(err.message));
+    .catch(err => res.status(404).send(err.message));
 });
 
 // View single user
@@ -16,11 +16,7 @@ router.get("/:id", (req, res) => {
   User.findOne({ _id: req.params.id })
     .select("-password -__v")
     .then(result => res.send(result))
-    .catch(() =>
-      res.status(404).send({
-        Error: { code: 404, status: "Not Found", message: "User Not Found!" }
-      })
-    );
+    .catch(() => res.status(404).send("User Not Found!"));
 });
 
 // Save new user
