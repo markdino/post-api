@@ -14,7 +14,14 @@ const postSchema = new mongoose.Schema({
   },
   message: { type: String, required: [true, "Message field is reuired"] },
   date: { type: Date, default: Date.now },
-  likes: { type: Number, default: 0 },
+  likes: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    }
+  ],
   comments: [commentSchema]
 });
 
