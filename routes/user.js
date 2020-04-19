@@ -20,7 +20,10 @@ router.get("/:id", (req, res) => {
 });
 
 // Save new user
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (user) return res.status(400).send("User already registered.");
+
   User.create(req.body)
     .then(response => {
       const { _id, name, email } = response;
