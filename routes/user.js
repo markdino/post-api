@@ -1,3 +1,4 @@
+const _ = require("lodash");
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
@@ -21,20 +22,21 @@ router.get("/:id", (req, res) => {
 
 // Save new user
 router.post("/", async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
+  let user = await User.findOne({ email: req.body.email });
   if (user) return res.status(400).send("User already registered.");
 
-  User.create(req.body)
+  user = _.pick(req.body, ["name", "email", "password"]);
+  User.create(user)
     .then(response => {
-      const { _id, name, email } = response;
-      res.send({ _id, name, email });
+      res.send(_.pick(response, ["_id", "name", "email"]));
     })
     .catch(err => res.status(400).send(err.message));
 });
 
 // Update user
 router.put("/:id", (req, res) => {
-  User.updateOne({ _id: req.params.id }, { $set: req.body })
+  const user = _.pick(req.body, ["name", "email", "password", "isAdmin"]);
+  User.updateOne({ _id: req.params.id }, { $set: user })
     .then(response => res.send(response))
     .catch(err => res.status(400).send(err.message));
 });
