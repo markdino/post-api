@@ -7,7 +7,7 @@ const { Comment } = require("../models/comment");
 router.post("/:id/comment", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    const comment = await Comment.create(req.body);
+    const comment = await new Comment(req.body);
     post.comments.push(comment);
     post.save();
     res.send(comment);
