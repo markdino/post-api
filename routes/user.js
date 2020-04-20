@@ -1,4 +1,5 @@
 const _ = require("lodash");
+const bcrypt = require("bcrypt");
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
@@ -26,6 +27,8 @@ router.post("/", async (req, res) => {
   if (user) return res.status(400).send("User already registered.");
 
   user = _.pick(req.body, ["name", "email", "password"]);
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
   User.create(user)
     .then(response => {
       res.send(_.pick(response, ["_id", "name", "email"]));
@@ -34,8 +37,12 @@ router.post("/", async (req, res) => {
 });
 
 // Update user
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
   const user = _.pick(req.body, ["name", "email", "password", "isAdmin"]);
+  if (user.password) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
+  }
   User.updateOne({ _id: req.params.id }, { $set: user })
     .then(response => res.send(response))
     .catch(err => res.status(400).send(err.message));
