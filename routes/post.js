@@ -7,7 +7,7 @@ const User = require("../models/user");
 router.get("/", (req, res) => {
   Post.find()
     .sort({ date: 1 })
-    .select("-__v -comments.__v")
+    .select("-__v -comments.__v -comments.message")
     .populate("author", "name")
     .then(result => res.send(result))
     .catch(err => res.status(404).send(err.message));
