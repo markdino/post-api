@@ -1,11 +1,6 @@
 const mongoose = require("mongoose");
 const { commentSchema } = require("./comment");
 
-mongoose.connect("mongodb://localhost/post", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
-
 const postSchema = new mongoose.Schema({
   author: {
     type: mongoose.Schema.Types.ObjectId,
