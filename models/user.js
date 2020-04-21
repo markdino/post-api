@@ -1,3 +1,5 @@
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
@@ -10,5 +12,12 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: [true, "Password field is required"] },
   isAdmin: Boolean
 });
+
+userSchema.methods.generateAuthToken = function() {
+  return jwt.sign(
+    { _id: this._id, isAdmin: this.isAdmin },
+    process.env.JWT_KEY
+  );
+};
 
 module.exports = mongoose.model("User", userSchema);
