@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
+const auth = require("../middleware/auth");
 
 // View all users
 router.get("/", (req, res) => {
@@ -40,8 +41,11 @@ router.post("/", async (req, res) => {
 });
 
 // Update user
-router.put("/:id", async (req, res) => {
-  const user = _.pick(req.body, ["name", "email", "password", "isAdmin"]);
+router.put("/:id", auth, async (req, res) => {
+  if (req.user._id !== req.params.id)
+    return res.status(401).send("Permission denied.");
+
+  const user = _.pick(req.body, ["name", "email", "password"]);
   if (user.password) {
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);
@@ -52,7 +56,9 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete user
-router.delete("/:id", (req, res) => {
+router.delete("/:id", auth, (req, res) => {
+  if (req.user._id !== req.params.id)
+    return res.status(401).send("Permission denied.");
   User.deleteOne({ _id: req.params.id })
     .then(response => res.send(response))
     .catch(err => res.status(400).send(err.message));
