@@ -2,6 +2,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const express = require("express");
 const app = express();
+const auth = require("./routes/auth");
 const like = require("./routes/like");
 const comment = require("./routes/comment");
 const post = require("./routes/post");
@@ -21,6 +22,7 @@ app.use("/api/post", like);
 app.use("/api/post", comment);
 app.use("/api/post", post);
 app.use("/api/user", user);
+app.use("/api/auth", auth);
 app.use(pageNotFound);
 
 // Listen to Port 3000
