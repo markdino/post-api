@@ -6,7 +6,9 @@ const User = require("../models/user");
 const auth = require("../middleware/auth");
 
 // View all users
-router.get("/", (req, res) => {
+router.get("/", auth, (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+
   User.find()
     .sort({ name: 1 })
     .select("-password -__v")
@@ -15,7 +17,9 @@ router.get("/", (req, res) => {
 });
 
 // View single user
-router.get("/:id", (req, res) => {
+router.get("/:id", auth, (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+
   User.findOne({ _id: req.params.id })
     .select("-password -__v")
     .then(result => res.send(result))
@@ -43,7 +47,7 @@ router.post("/", async (req, res) => {
 // Update user
 router.put("/:id", auth, async (req, res) => {
   if (req.user._id !== req.params.id)
-    return res.status(401).send("Permission denied.");
+    return res.status(403).send("Access denied!");
 
   const user = _.pick(req.body, ["name", "email", "password"]);
   if (user.password) {
@@ -58,7 +62,7 @@ router.put("/:id", auth, async (req, res) => {
 // Delete user
 router.delete("/:id", auth, (req, res) => {
   if (req.user._id !== req.params.id)
-    return res.status(401).send("Permission denied.");
+    return res.status(403).send("Access denied!");
   User.deleteOne({ _id: req.params.id })
     .then(response => res.send(response))
     .catch(err => res.status(400).send(err.message));
