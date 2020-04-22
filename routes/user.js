@@ -68,4 +68,17 @@ router.delete("/:id", auth, (req, res) => {
     .catch(err => res.status(400).send(err.message));
 });
 
+// Make user an admin
+router.post("/admin", auth, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+  try {
+    const user = await User.findOne({ email: req.body.email });
+    user.isAdmin = !user.isAdmin;
+    await user.save();
+    res.send(_.pick(user, ["_id", "name", "email", "isAdmin"]));
+  } catch {
+    res.status(400).send("Bad request!");
+  }
+});
+
 module.exports = router;
