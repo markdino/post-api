@@ -16,6 +16,14 @@ router.get("/", auth, (req, res) => {
     .catch(err => res.status(404).send(err.message));
 });
 
+// Get current user
+router.get("/me", auth, (req, res) => {
+  User.findById(req.user._id)
+    .select("-password -__v")
+    .then(response => res.send(response))
+    .catch(err => res.send(404).send(err.message));
+});
+
 // View single user
 router.get("/:id", auth, (req, res) => {
   if (!req.user.isAdmin) return res.status(403).send("Access denied!");
