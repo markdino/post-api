@@ -34,6 +34,8 @@ router.get("/author/:authorId", (req, res) => {
 
 // Save new post
 router.post("/", auth, (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+
   req.body.author = req.user._id;
   Post.create(_.pick(req.body, ["author", "message", "date"]))
     .then(response =>
@@ -44,11 +46,13 @@ router.post("/", auth, (req, res) => {
 
 // Update post
 router.put("/:id", auth, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+
   const post = await Post.findOne({ _id: req.params.id });
   req.body.date = Date.now();
 
   if (req.user._id !== post.author.toString())
-    return res.status(401).send("Permission denied.");
+    return res.status(403).send("Access denied!");
   Post.updateOne(
     { _id: req.params.id },
     { $set: _.pick(req.body, ["date", "message"]) }
@@ -59,9 +63,11 @@ router.put("/:id", auth, async (req, res) => {
 
 // Delete post
 router.delete("/:id", auth, async (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+
   const post = await Post.findOne({ _id: req.params.id });
   if (req.user._id !== post.author.toString())
-    return res.status(401).send("Permission denied.");
+    return res.status(403).send("Access denied!");
 
   Post.deleteOne({ _id: req.params.id })
     .then(response => res.send(response))
@@ -70,8 +76,10 @@ router.delete("/:id", auth, async (req, res) => {
 
 // Delete all post by author
 router.delete("/author/:authorId", auth, (req, res) => {
+  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+
   if (req.user._id !== req.params.authorId)
-    return res.status(401).send("Permission denied.");
+    return res.status(403).send("Access denied.");
 
   Post.deleteMany({ author: req.params.authorId })
     .then(response => res.send(response))
