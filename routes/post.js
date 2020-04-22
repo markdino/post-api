@@ -3,6 +3,7 @@ const router = express.Router();
 const Post = require("../models/post");
 const _ = require("lodash");
 const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
 
 // View all post
 router.get("/", (req, res) => {
@@ -33,9 +34,7 @@ router.get("/author/:authorId", (req, res) => {
 });
 
 // Save new post
-router.post("/", auth, (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
-
+router.post("/", [auth, admin], (req, res) => {
   req.body.author = req.user._id;
   Post.create(_.pick(req.body, ["author", "message", "date"]))
     .then(response =>
@@ -45,9 +44,7 @@ router.post("/", auth, (req, res) => {
 });
 
 // Update post
-router.put("/:id", auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
-
+router.put("/:id", [auth, admin], async (req, res) => {
   const post = await Post.findOne({ _id: req.params.id });
   req.body.date = Date.now();
 
@@ -62,9 +59,7 @@ router.put("/:id", auth, async (req, res) => {
 });
 
 // Delete post
-router.delete("/:id", auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
-
+router.delete("/:id", [auth, admin], async (req, res) => {
   const post = await Post.findOne({ _id: req.params.id });
   if (req.user._id !== post.author.toString())
     return res.status(403).send("Access denied!");
@@ -75,9 +70,7 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 // Delete all post by author
-router.delete("/author/:authorId", auth, (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
-
+router.delete("/author/:authorId", [auth, admin], (req, res) => {
   if (req.user._id !== req.params.authorId)
     return res.status(403).send("Access denied.");
 

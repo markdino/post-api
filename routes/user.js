@@ -4,11 +4,10 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
 const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
 
 // View all users
-router.get("/", auth, (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
-
+router.get("/", [auth, admin], (req, res) => {
   User.find()
     .sort({ name: 1 })
     .select("-password -__v")
@@ -25,9 +24,7 @@ router.get("/me", auth, (req, res) => {
 });
 
 // View single user
-router.get("/:id", auth, (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
-
+router.get("/:id", [auth, admin], (req, res) => {
   User.findOne({ _id: req.params.id })
     .select("-password -__v")
     .then(result => res.send(result))
@@ -77,8 +74,7 @@ router.delete("/:id", auth, (req, res) => {
 });
 
 // Make user an admin
-router.post("/admin", auth, async (req, res) => {
-  if (!req.user.isAdmin) return res.status(403).send("Access denied!");
+router.post("/admin", [auth, admin], async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     user.isAdmin = !user.isAdmin;
