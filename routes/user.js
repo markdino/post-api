@@ -1,8 +1,9 @@
+const Joi = require("@hapi/joi");
 const _ = require("lodash");
 const bcrypt = require("bcrypt");
 const express = require("express");
 const router = express.Router();
-const User = require("../models/user");
+const { User, validateUserRequired, validateUser } = require("../models/user");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 
@@ -33,13 +34,17 @@ router.get("/:id", [auth, admin], (req, res) => {
 
 // Save new user
 router.post("/", async (req, res) => {
+  // Validate request user
+  const { error } = validateUserRequired(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  // Validate if user exist
   let user = await User.findOne({ email: req.body.email });
   if (user) return res.status(400).send("User already registered.");
 
-  user = _.pick(req.body, ["name", "email", "password"]);
   const salt = await bcrypt.genSalt(10);
-  user.password = await bcrypt.hash(user.password, salt);
-  User.create(user)
+  req.body.password = await bcrypt.hash(req.body.password, salt);
+  User.create(req.body)
     .then(response => {
       const token = response.generateAuthToken();
       res
@@ -51,15 +56,18 @@ router.post("/", async (req, res) => {
 
 // Update user
 router.put("/:id", auth, async (req, res) => {
+  // Validate request user
+  const { error } = validateUser(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   if (req.user._id !== req.params.id)
     return res.status(403).send("Access denied!");
 
-  const user = _.pick(req.body, ["name", "email", "password"]);
-  if (user.password) {
+  if (req.body.password) {
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
+    req.body.password = await bcrypt.hash(req.body.password, salt);
   }
-  User.updateOne({ _id: req.params.id }, { $set: user })
+  User.updateOne({ _id: req.params.id }, { $set: req.body })
     .then(response => res.send(response))
     .catch(err => res.status(400).send(err.message));
 });
@@ -75,8 +83,18 @@ router.delete("/:id", auth, (req, res) => {
 
 // Make user an admin
 router.post("/admin", [auth, admin], async (req, res) => {
+  // Validate email
+  const schema = Joi.object({
+    email: Joi.string()
+      .email()
+      .required()
+  });
+  const { value, error } = schema.validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  // Promote/demote user
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne(value);
     user.isAdmin = !user.isAdmin;
     await user.save();
     res.send(_.pick(user, ["_id", "name", "email", "isAdmin"]));

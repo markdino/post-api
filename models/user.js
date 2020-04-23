@@ -1,6 +1,7 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const Joi = require("@hapi/joi");
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: [true, "Name field is required"] },
@@ -20,4 +21,41 @@ userSchema.methods.generateAuthToken = function() {
   );
 };
 
-module.exports = mongoose.model("User", userSchema);
+const validateUserRequired = user => {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .max(50)
+      .required(),
+    email: Joi.string()
+      .email()
+      .required(),
+    password: Joi.string()
+      .min(5)
+      .max(225)
+      .required()
+  });
+
+  return schema.validate(user);
+};
+
+const validateUser = user => {
+  const schema = Joi.object({
+    name: Joi.string()
+      .min(3)
+      .max(50),
+    email: Joi.string().email(),
+    password: Joi.string()
+      .min(5)
+      .max(225)
+  });
+
+  return schema.validate(user);
+};
+
+const User = mongoose.model("User", userSchema);
+module.exports = {
+  User,
+  validateUserRequired,
+  validateUser
+};
