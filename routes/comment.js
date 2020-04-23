@@ -1,11 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const Post = require("../models/post");
+const { Post, validateMessage } = require("../models/post");
 const { Comment } = require("../models/comment");
 const auth = require("../middleware/auth");
 
 // Add comment to the post
 router.post("/:id/comment", auth, async (req, res) => {
+  const { error } = validateMessage(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   try {
     const post = await Post.findById(req.params.id);
     const comment = await new Comment({
@@ -27,7 +30,7 @@ router.delete("/:id/comment/:commentId", auth, async (req, res) => {
     const comment = post.comments.id(req.params.commentId);
     const critic = comment.user;
     if (critic.toString() !== req.user._id)
-      return res.status(401).send("Permission denied.");
+      return res.status(403).send("Access denied!");
 
     comment.remove();
     post.save();

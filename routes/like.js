@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Post = require("../models/post");
+const { Post } = require("../models/post");
 const auth = require("../middleware/auth");
 
 // Add/remove like to post
