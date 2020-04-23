@@ -1,3 +1,4 @@
+const Joi = require("@hapi/joi");
 const mongoose = require("mongoose");
 const { commentSchema } = require("./comment");
 
@@ -20,4 +21,19 @@ const postSchema = new mongoose.Schema({
   comments: [commentSchema]
 });
 
-module.exports = mongoose.model("Post", postSchema);
+const Post = mongoose.model("Post", postSchema);
+
+const validateMessage = message => {
+  const schema = Joi.object({
+    message: Joi.string()
+      .min(3)
+      .required()
+  });
+
+  return schema.validate(message);
+};
+
+module.exports = {
+  Post,
+  validateMessage
+};

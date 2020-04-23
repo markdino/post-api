@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Post = require("../models/post");
+const { Post, validateMessage } = require("../models/post");
 const _ = require("lodash");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
@@ -35,6 +35,9 @@ router.get("/author/:authorId", (req, res) => {
 
 // Save new post
 router.post("/", [auth, admin], (req, res) => {
+  const { error } = validateMessage(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   req.body.author = req.user._id;
   Post.create(_.pick(req.body, ["author", "message", "date"]))
     .then(response =>
@@ -45,6 +48,9 @@ router.post("/", [auth, admin], (req, res) => {
 
 // Update post
 router.put("/:id", [auth, admin], async (req, res) => {
+  const { error } = validateMessage(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   const post = await Post.findOne({ _id: req.params.id });
   req.body.date = Date.now();
 
