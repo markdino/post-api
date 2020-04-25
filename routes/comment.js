@@ -3,11 +3,15 @@ const router = express.Router();
 const { Post, validateMessage } = require("../models/post");
 const { Comment } = require("../models/comment");
 const auth = require("../middleware/auth");
+const payload = require("../middleware/payload");
 
 // Add comment to the post
 router.post("/:id/comment", auth, async (req, res) => {
   const { error } = validateMessage(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+  if (error)
+    return res
+      .status(400)
+      .send(payload(error.details[0].message, null, "Bad request!"));
 
   try {
     const post = await Post.findById(req.params.id);
@@ -17,9 +21,9 @@ router.post("/:id/comment", auth, async (req, res) => {
     });
     post.comments.push(comment);
     post.save();
-    res.send(comment);
-  } catch {
-    res.status(400).send("Bad request!");
+    res.send(payload(null, comment, "New comment added."));
+  } catch (err) {
+    res.status(400).send(payload(err.message, null, "Bad request!"));
   }
 });
 
@@ -30,13 +34,13 @@ router.delete("/:id/comment/:commentId", auth, async (req, res) => {
     const comment = post.comments.id(req.params.commentId);
     const critic = comment.user;
     if (critic.toString() !== req.user._id)
-      return res.status(403).send("Access denied!");
+      return res.status(403).send(payload("Access denied!", null, "Forbidden"));
 
     comment.remove();
     post.save();
-    res.send(comment);
-  } catch {
-    res.status(400).send("Bad request!");
+    res.send(payload(null, comment, "Comment has been deleted"));
+  } catch (err) {
+    res.status(400).send(payload(err.message, null, "Bad request!"));
   }
 });
 

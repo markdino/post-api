@@ -6,41 +6,62 @@ const router = express.Router();
 const { User, validateUserRequired, validateUser } = require("../models/user");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
+const payload = require("../middleware/payload");
 
 // View all users
 router.get("/", [auth, admin], (req, res) => {
   User.find()
     .sort({ name: 1 })
     .select("-password -__v")
-    .then(result => res.send(result))
-    .catch(err => res.status(404).send(err.message));
+    .then(result =>
+      res.send(
+        payload(null, result, result.length ? "Users." : "No user found.")
+      )
+    )
+    .catch(err =>
+      res.status(400).send(payload(err.message, null, "Bad request!"))
+    );
 });
 
 // Get current user
 router.get("/me", auth, (req, res) => {
   User.findById(req.user._id)
     .select("-password -__v")
-    .then(response => res.send(response))
-    .catch(err => res.send(404).send(err.message));
+    .then(response => res.send(payload(null, response, "Current user.")))
+    .catch(err =>
+      res.status(404).send(payload(err.message, null, "Not found."))
+    );
 });
 
 // View single user
 router.get("/:id", [auth, admin], (req, res) => {
-  User.findOne({ _id: req.params.id })
+  User.findById(req.params.id)
     .select("-password -__v")
-    .then(result => res.send(result))
-    .catch(() => res.status(404).send("User Not Found!"));
+    .then(result => {
+      result
+        ? res.send(payload(null, result, "User"))
+        : res.status(404).send(payload("User not found.", null, "Not found."));
+    })
+    .catch(ex =>
+      res.status(404).send(payload(`Invalid ID. ${ex.value}`, null, ex.name))
+    );
 });
 
 // Save new user
 router.post("/", async (req, res) => {
   // Validate request user
   const { error } = validateUserRequired(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+  if (error)
+    return res
+      .status(400)
+      .send(payload(error.details[0].message, null, "Bad request!"));
 
   // Validate if user exist
-  let user = await User.findOne({ email: req.body.email });
-  if (user) return res.status(400).send("User already registered.");
+  const user = await User.findOne({ email: req.body.email });
+  if (user)
+    return res
+      .status(400)
+      .send(payload("User already registered.", null, "Bad request!"));
 
   const salt = await bcrypt.genSalt(10);
   req.body.password = await bcrypt.hash(req.body.password, salt);
@@ -49,36 +70,66 @@ router.post("/", async (req, res) => {
       const token = response.generateAuthToken();
       res
         .header("x-auth-token", token)
-        .send(_.pick(response, ["_id", "name", "email"]));
+        .send(
+          payload(
+            null,
+            _.pick(response, ["_id", "name", "email"]),
+            "New user has been registered."
+          )
+        );
     })
-    .catch(err => res.status(400).send(err.message));
+    .catch(err => res.status(400).send(payload(err.message, null, err.name)));
 });
 
 // Update user
 router.put("/:id", auth, async (req, res) => {
   // Validate request user
   const { error } = validateUser(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+  if (error)
+    return res
+      .status(400)
+      .send(payload(error.details[0].message, null, "Bad request!"));
 
   if (req.user._id !== req.params.id)
-    return res.status(403).send("Access denied!");
+    return res.status(403).send(payload("Access denied!", null, "Forbidden"));
 
   if (req.body.password) {
     const salt = await bcrypt.genSalt(10);
     req.body.password = await bcrypt.hash(req.body.password, salt);
   }
   User.updateOne({ _id: req.params.id }, { $set: req.body })
-    .then(response => res.send(response))
-    .catch(err => res.status(400).send(err.message));
+    .then(response =>
+      res.send(
+        payload(
+          null,
+          `${response.nModified} user has been modified`,
+          "Update user"
+        )
+      )
+    )
+    .catch(err => res.status(400).send(payload(err.message, null, err.name)));
 });
 
 // Delete user
 router.delete("/:id", auth, (req, res) => {
   if (req.user._id !== req.params.id)
-    return res.status(403).send("Access denied!");
+    return res.status(403).send(payload("Access denied!", null, "Forbidden"));
+
   User.deleteOne({ _id: req.params.id })
-    .then(response => res.send(response))
-    .catch(err => res.status(400).send(err.message));
+    .then(response => {
+      response.deletedCount > 0
+        ? res.send(
+            payload(
+              null,
+              `${response.deletedCount} user has been deleted.`,
+              "Delete user."
+            )
+          )
+        : res
+            .status(404)
+            .send(payload("No user has been deleted.", null, "Invalid user."));
+    })
+    .catch(err => res.status(400).send(payload(err.message, null, err.name)));
 });
 
 // Make user an admin
@@ -90,16 +141,26 @@ router.post("/admin", [auth, admin], async (req, res) => {
       .required()
   });
   const { value, error } = schema.validate(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+  if (error)
+    return res
+      .status(400)
+      .send(payload(error.details[0].message, null, "Bad request!"));
 
   // Promote/demote user
   try {
-    const user = await User.findOne(value);
+    const user = await User.findOne(value).select("-password -__v");
+    if (!user)
+      return res
+        .status(404)
+        .send(payload('"email" not registered', null, "Not found"));
+
     user.isAdmin = !user.isAdmin;
     await user.save();
-    res.send(_.pick(user, ["_id", "name", "email", "isAdmin"]));
-  } catch {
-    res.status(400).send("Bad request!");
+    res.send(
+      payload(null, user, user.isAdmin ? "User is promoted" : "User is demoted")
+    );
+  } catch (ex) {
+    res.status(400).send(payload(err.message, null, "Bad request!"));
   }
 });
 
