@@ -8,6 +8,8 @@ const comment = require("./routes/comment");
 const post = require("./routes/post");
 const user = require("./routes/user");
 const pageNotFound = require("./routes/404");
+const compression = require("compression");
+const helmet = require("helmet");
 
 // Database connection
 mongoose.connect(process.env.DB_PATH, {
@@ -24,6 +26,8 @@ app.use("/api/post", post);
 app.use("/api/user", user);
 app.use("/api/auth", auth);
 app.use(pageNotFound);
+app.use(helmet());
+app.use(compression());
 
 // Listen to Port 3000
 const port = process.env.PORT || 3000;
