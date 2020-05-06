@@ -5,8 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node",
-    "develop": "nodemon"
+    "start": "node index.js",
+    "develop": "nodemon index.js"
+  },
+  "engines": {
+    "node": "10.16.3"
   },
   "keywords": [
     "Post API",
