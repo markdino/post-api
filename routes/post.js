@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const { Post, validateMessage } = require("../models/post");
-const _ = require("lodash");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const payload = require("../middleware/payload");
@@ -9,7 +8,7 @@ const payload = require("../middleware/payload");
 // View all post
 router.get("/", (req, res) => {
   Post.find()
-    .sort({ date: 1 })
+    .sort({ date: -1 })
     .select("-__v -comments.__v -comments.message")
     .populate("author", "name")
     .then(result =>
@@ -44,7 +43,7 @@ router.get("/:id", (req, res) => {
 // View post by author
 router.get("/author/:authorId", (req, res) => {
   Post.find({ author: req.params.authorId })
-    .sort({ date: 1 })
+    .sort({ date: -1 })
     .select("-__v -author")
     .then(result =>
       res.send(
@@ -68,15 +67,12 @@ router.post("/", [auth, admin], (req, res) => {
 
   req.body.author = req.user._id;
   Post.create(req.body)
-    .then(response =>
+    .then(response => {
+      const { _id, author, message, date } = response;
       res.send(
-        payload(
-          null,
-          _.pick(response, ["_id", "author", "message", "date"]),
-          "New post added."
-        )
+        payload(null, { _id, author, message, date }, "New post added.")
       )
-    )
+    })
     .catch(err =>
       res.status(400).send(payload(err.message, null, "Bad request!"))
     );

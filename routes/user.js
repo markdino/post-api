@@ -1,5 +1,4 @@
 const Joi = require("@hapi/joi");
-const _ = require("lodash");
 const bcrypt = require("bcrypt");
 const express = require("express");
 const router = express.Router();
@@ -68,15 +67,12 @@ router.post("/", async (req, res) => {
   User.create(req.body)
     .then(response => {
       const token = response.generateAuthToken();
+      const { _id, name, email } = response;
       res
         .header("x-auth-token", token)
         .header("access-control-expose-headers", "x-auth-token")
         .send(
-          payload(
-            null,
-            _.pick(response, ["_id", "name", "email"]),
-            "New user has been registered."
-          )
+          payload(null, { _id, name, email }, "New user has been registered.")
         );
     })
     .catch(err => res.status(400).send(payload(err.message, null, err.name)));
@@ -120,15 +116,15 @@ router.delete("/:id", auth, (req, res) => {
     .then(response => {
       response.deletedCount > 0
         ? res.send(
-            payload(
-              null,
-              `${response.deletedCount} user has been deleted.`,
-              "Delete user."
-            )
+          payload(
+            null,
+            `${response.deletedCount} user has been deleted.`,
+            "Delete user."
           )
+        )
         : res
-            .status(404)
-            .send(payload("No user has been deleted.", null, "Invalid user."));
+          .status(404)
+          .send(payload("No user has been deleted.", null, "Invalid user."));
     })
     .catch(err => res.status(400).send(payload(err.message, null, err.name)));
 });
