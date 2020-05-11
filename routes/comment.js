@@ -16,6 +16,8 @@ router.post("/:id/comment", auth, async (req, res) => {
 
   try {
     const post = await Post.findById(req.params.id);
+    if (!post)
+      return res.status(404).send(payload("Post not found.", null, 'Not found'));
     const comment = await new Comment({
       user: req.user._id,
       message: req.body.message
@@ -32,7 +34,13 @@ router.post("/:id/comment", auth, async (req, res) => {
 router.delete("/:id/comment/:commentId", auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
+    if (!post)
+      return res.status(404).send(payload("Post not found.", null, 'Not found'));
+
     const comment = post.comments.id(req.params.commentId);
+    if (!comment)
+      return res.status(404).send(payload("Comment not found.", null, 'Not found'));
+
     const critic = comment.user;
     if (critic.toString() !== req.user._id)
       return res.status(403).send(payload("Access denied!", null, "Forbidden"));
