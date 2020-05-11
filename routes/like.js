@@ -8,6 +8,9 @@ const payload = require("../middleware/payload");
 router.put("/:id/like", auth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
+    if (!post)
+      return res.status(404).send(payload("Post not found.", null, 'Not found'));
+
     const user = post.likes.find(like => like.user.toString() === req.user._id);
     const liked = user ? false : true;
 
@@ -18,9 +21,11 @@ router.put("/:id/like", auth, async (req, res) => {
       ));
 
     await post.save();
-    res.send(payload(null, { liked, length: post.likes.length }, liked));
+    res.send(
+      payload(null, { liked, length: post.likes.length }, liked ? 'Like' : 'Unlike')
+    );
   } catch (err) {
-    res.status(400).send(payload(err.message, null, "Bad request!"));
+    res.status(400).send(payload('Invalid ID.', null, "Bad request!"));
   }
 });
 
