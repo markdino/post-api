@@ -53,14 +53,14 @@ router.post("/", async (req, res) => {
   if (error)
     return res
       .status(400)
-      .send(payload(error.details[0].message, null, "Bad request!"));
+      .send(payload(error, null, "Bad request!"));
 
   // Validate if user exist
   const user = await User.findOne({ email: req.body.email });
   if (user)
     return res
       .status(400)
-      .send(payload("User already registered.", null, "Bad request!"));
+      .send(payload({ email: "Email already taken." }, null, "Bad request!"));
 
   const salt = await bcrypt.genSalt(10);
   req.body.password = await bcrypt.hash(req.body.password, salt);
@@ -85,7 +85,7 @@ router.put("/:id", auth, async (req, res) => {
   if (error)
     return res
       .status(400)
-      .send(payload(error.details[0].message, null, "Bad request!"));
+      .send(payload(error, null, "Bad request!"));
 
   if (req.user._id !== req.params.id)
     return res.status(403).send(payload("Access denied!", null, "Forbidden"));
@@ -108,25 +108,24 @@ router.put("/:id", auth, async (req, res) => {
 });
 
 // Delete user
-router.delete("/:id", auth, (req, res) => {
-  if (req.user._id !== req.params.id)
-    return res.status(403).send(payload("Access denied!", null, "Forbidden"));
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+    if (!user)
+      return res.status(404).send(
+        payload("User already been deleted.", null, 'Not found')
+      );
 
-  User.deleteOne({ _id: req.params.id })
-    .then(response => {
-      response.deletedCount > 0
-        ? res.send(
-          payload(
-            null,
-            `${response.deletedCount} user has been deleted.`,
-            "Delete user."
-          )
-        )
-        : res
-          .status(404)
-          .send(payload("No user has been deleted.", null, "Invalid user."));
-    })
-    .catch(err => res.status(400).send(payload(err.message, null, err.name)));
+    if (req.user._id !== req.params.id)
+      return res.status(403).send(payload("Access denied!", null, "Forbidden"));
+
+    const response = await user.deleteOne();
+    const { _id, name, email } = response;
+    if (response) res.send(payload(null, { _id, name, email }, 'Deleted user'));
+  }
+  catch {
+    res.status(400).send(payload('Invalid user', null, 'Bad request'));
+  }
 });
 
 // Make user an admin

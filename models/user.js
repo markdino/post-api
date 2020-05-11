@@ -10,11 +10,11 @@ const userSchema = new mongoose.Schema({
     required: [true, "Email field is required"],
     unique: true
   },
-  password: { type: String, required: [true, "Password field is required"] },
+  password: { type: String, required: [true, "Password field is required"], min: 5, max: 256 },
   isAdmin: Boolean
 });
 
-userSchema.methods.generateAuthToken = function() {
+userSchema.methods.generateAuthToken = function () {
   return jwt.sign(
     { _id: this._id, isAdmin: this.isAdmin },
     process.env.JWT_KEY
@@ -22,35 +22,73 @@ userSchema.methods.generateAuthToken = function() {
 };
 
 const validateUserRequired = user => {
-  const schema = Joi.object({
-    name: Joi.string()
-      .min(3)
-      .max(50)
-      .required(),
-    email: Joi.string()
-      .email()
-      .required(),
-    password: Joi.string()
-      .min(5)
-      .max(225)
-      .required()
-  });
+  const { name, email, password } = user
+  const errors = {};
+  let isValid = true;
 
-  return schema.validate(user);
+  errors.name = (() => {
+    const nameSchema = Joi.object({ name: Joi.string().min(3).max(50).required() });
+    const { error } = nameSchema.validate({ name });
+    if (error) {
+      isValid = false
+      return error.details[0].message
+    };
+  })()
+
+  errors.email = (() => {
+    const emailSchema = Joi.object({ email: Joi.string().email().required() });
+    const { error } = emailSchema.validate({ email });
+    if (error) {
+      isValid = false
+      return error.details[0].message
+    };
+  })()
+
+  errors.password = (() => {
+    const passwordSchema = Joi.object({ password: Joi.string().min(5).max(225).required() });
+    const { error } = passwordSchema.validate({ password });
+    if (error) {
+      isValid = false
+      return error.details[0].message
+    };
+  })()
+
+  return ({ error: !isValid ? errors : null });
 };
 
 const validateUser = user => {
-  const schema = Joi.object({
-    name: Joi.string()
-      .min(3)
-      .max(50),
-    email: Joi.string().email(),
-    password: Joi.string()
-      .min(5)
-      .max(225)
-  });
+  const { name, email, password } = user
+  const errors = {};
+  let isValid = true;
 
-  return schema.validate(user);
+  errors.name = (() => {
+    const nameSchema = Joi.object({ name: Joi.string().min(3).max(50) });
+    const { error } = nameSchema.validate({ name });
+    if (error) {
+      isValid = false
+      return error.details[0].message
+    };
+  })()
+
+  errors.email = (() => {
+    const emailSchema = Joi.object({ email: Joi.string().email() });
+    const { error } = emailSchema.validate({ email });
+    if (error) {
+      isValid = false
+      return error.details[0].message
+    };
+  })()
+
+  errors.password = (() => {
+    const passwordSchema = Joi.object({ password: Joi.string().min(5).max(225) });
+    const { error } = passwordSchema.validate({ password });
+    if (error) {
+      isValid = false
+      return error.details[0].message
+    };
+  })()
+
+  return ({ error: !isValid ? errors : null });
 };
 
 const User = mongoose.model("User", userSchema);
