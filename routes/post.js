@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { Post, validateMessage } = require("../models/post");
+const Post = require("../models/post");
+const { validateMessage } = Post;
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const payload = require("../middleware/payload");

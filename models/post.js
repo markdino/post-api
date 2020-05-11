@@ -21,8 +21,6 @@ const postSchema = new mongoose.Schema({
   comments: [commentSchema]
 });
 
-const Post = mongoose.model("Post", postSchema);
-
 const validateMessage = message => {
   const schema = Joi.object({
     message: Joi.string()
@@ -33,7 +31,5 @@ const validateMessage = message => {
   return schema.validate(message);
 };
 
-module.exports = {
-  Post,
-  validateMessage
-};
+module.exports = mongoose.model("Post", postSchema);
+module.exports.validateMessage = validateMessage;

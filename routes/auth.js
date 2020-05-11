@@ -2,7 +2,7 @@ const Joi = require("@hapi/joi");
 const bcrypt = require("bcrypt");
 const express = require("express");
 const router = express.Router();
-const { User } = require("../models/user");
+const User = require("../models/user");
 const payload = require("../middleware/payload");
 
 router.post("/", async (req, res) => {

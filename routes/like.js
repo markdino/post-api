@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Post } = require("../models/post");
+const Post = require("../models/post");
 const auth = require("../middleware/auth");
 const payload = require("../middleware/payload");
 
@@ -14,8 +14,8 @@ router.put("/:id/like", auth, async (req, res) => {
     !user
       ? post.likes.push({ user: req.user._id })
       : (post.likes = post.likes.filter(
-          like => like.user.toString() !== req.user._id
-        ));
+        like => like.user.toString() !== req.user._id
+      ));
 
     await post.save();
     res.send(payload(null, { liked, length: post.likes.length }, liked));

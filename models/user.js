@@ -91,9 +91,6 @@ const validateUser = user => {
   return ({ error: !isValid ? errors : null });
 };
 
-const User = mongoose.model("User", userSchema);
-module.exports = {
-  User,
-  validateUserRequired,
-  validateUser
-};
+module.exports = mongoose.model("User", userSchema);
+module.exports.validateUserRequired = validateUserRequired;
+module.exports.validateUser = validateUser;
