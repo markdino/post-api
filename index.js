@@ -1,33 +1,11 @@
-require("dotenv").config();
-const mongoose = require("mongoose");
-const express = require("express");
-const app = express();
-const auth = require("./routes/auth");
-const like = require("./routes/like");
-const comment = require("./routes/comment");
-const post = require("./routes/post");
-const user = require("./routes/user");
-const pageNotFound = require("./routes/404");
+const app = require("express")();
+const db = require('./startups/db');
+const middleware = require('./startups/middleware')
+const routes = require('./startups/routes')
+const server = require('./startups/server')
 
-// Database connection
-mongoose.connect(process.env.DB_PATH, {
-  useCreateIndex: true,
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
-
-app.use(express.json());
-
-// Routes
-app.use("/api/post", like);
-app.use("/api/post", comment);
-app.use("/api/post", post);
-app.use("/api/user", user);
-app.use("/api/auth", auth);
-app.use(pageNotFound);
-
-// Listen to Port 3000
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Listening on port ${port}...`);
-});
+// Startups
+db.connect();
+middleware(app);
+routes(app);
+server.start(app);
