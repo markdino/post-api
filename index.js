@@ -11,6 +11,7 @@ const pageNotFound = require("./routes/404");
 
 // Database connection
 mongoose.connect(process.env.DB_PATH, {
+  useCreateIndex: true,
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
